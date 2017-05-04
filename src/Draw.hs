@@ -10,22 +10,22 @@ import Img
 import Shape
 
 data ScanEdge = ScanEdge
-  { low :: Int
-  , high :: Int
-  , slope :: Int -> Int
+  { low :: Double
+  , high :: Double
+  , slope :: Double -> Double
   }
 
 data DrawContext = DrawContext
   { activeEdges :: V.Vector ScanEdge
   , remainingEdges :: V.Vector ScanEdge
-  , scanLine :: Int
-  , canvas :: H.Map (Int, Int) RGBA
+  , scanLine :: Double
+  , canvas :: H.Map Point RGBA
   , color :: RGBA
   }
 
 draw
   :: Polygon p
-  => RGBA -> p -> H.Map (Int, Int) RGBA
+  => RGBA -> p -> H.Map Point RGBA
 draw color pol =
   let (DrawContext {canvas = result}) =
         until
@@ -67,7 +67,7 @@ drawStep (DrawContext { activeEdges = activeEdges
     scanLine' = scanLine + 1
     segmentsToFill = overlaps $ intersects scanLine activeEdges
     fillSegment (x1, x2) = map (fillPixel) [x1 .. x2]
-    fillPixel x = H.insert (x, scanLine) color H.empty
+    fillPixel x = H.insert (Point {pointX = x, pointY = scanLine}) color H.empty
     activeEdges' =
       V.modify
         (V.sortBy
@@ -75,33 +75,29 @@ drawStep (DrawContext { activeEdges = activeEdges
               compare (slope1 scanLine') (slope2 scanLine')))
         (V.filter (inScanRange (scanLine')) (V.concat [remainingEdges, activeEdges]))
 
-inScanRange :: Int -> ScanEdge -> Bool
+inScanRange :: Double -> ScanEdge -> Bool
 inScanRange scanLine (ScanEdge {low = low, high = high}) = scanLine >= low && scanLine <= high
 
-intersects :: Int -> V.Vector ScanEdge -> V.Vector Int
+intersects :: Double -> V.Vector ScanEdge -> V.Vector Double
 intersects scanLine es = V.map (\(ScanEdge {slope = slope}) -> slope scanLine) es
 
-overlaps :: V.Vector Int -> [(Int, Int)]
+overlaps :: V.Vector Double -> [(Double, Double)]
 overlaps xs =
   if length xs < 2
     then []
     else [(V.head xs, V.head (V.tail xs))] ++ overlaps (V.tail xs)
 
 scanEdge :: Edge -> ScanEdge
-scanEdge (Edge {start = Point { x = x1, y = y1}, end = Point { x = x2, y = y2}}) =
-  ScanEdge
-  { low = starty
-  , high = max y1 y2
-  , slope = (\y -> startx + (floor (m * (fromIntegral (y - starty)))))
-  }
+scanEdge (Edge {start = Point {pointX = x1, pointY = y1}, end = Point {pointX = x2, pointY = y2}}) =
+  ScanEdge {low = starty, high = max y1 y2, slope = (\y -> startx + (m * (y - starty)))}
   where
     starty = min y1 y2
     startx =
       if starty == y1
         then x1
         else x2
-    deltaX = fromIntegral $ x2 - x1
-    deltaY = fromIntegral $ y2 - y1
+    deltaX = x2 - x1
+    deltaY = y2 - y1
     m =
       if deltaY == 0
         then 0

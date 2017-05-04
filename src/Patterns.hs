@@ -13,10 +13,10 @@ tile frame tiles = rects
       map
         (\(x, y) ->
            Rect
-           { topLeft = Point {x = x, y = y}
-           , bottomRight = Point {x = x + tileSize, y = y + tileSize}
-           })
-        $ concat corners
+           { topLeft = Point {pointX = x, pointY = y}
+           , bottomRight = Point {pointX = x + tileSize, pointY = y + tileSize}
+           }) $
+      concat corners
     corners = map (\b -> zip borders (repeat b)) borders
     borders = take tiles $ 0 : zipWith (+) borders (repeat tileSize)
-    tileSize = frame `div` tiles
+    tileSize = (fromIntegral frame) / (fromIntegral tiles)

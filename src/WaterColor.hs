@@ -7,13 +7,13 @@ import Data.Traversable (mapAccumR)
 
 import Draw
 import Img
-import Rand
+import Position
 import Shape
 import Warp
 
 waterColor
   :: Polygon p
-  => [(RGBA, p)] -> (RGBA -> RGBA -> RGBA) -> H.Map (Int, Int) RGBA
+  => [(RGBA, p)] -> (RGBA -> RGBA -> RGBA) -> H.Map Point RGBA
 waterColor polies mixer = H.unionsWith mixer bitmaps
   where
     bitmaps = map (\(i, (color, poly)) -> draw (shade i color) poly) $ zip [1 ..] polies

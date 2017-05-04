@@ -20,6 +20,7 @@ library
                      , Draw
                      , Rand
                      , Patterns
+                     , Position
                      , WaterColor
                      , Warp
   build-depends:       base >= 4.7 && < 5
@@ -27,6 +28,7 @@ library
                      , vector
                      , vector-algorithms
                      , random
+                     , hashable
                      , hashmap
                      , lens
   default-language:    Haskell2010
