@@ -1,5 +1,6 @@
 module Poly.Properties
-  ( Edge(..)
+  ( Collider(..)
+  , Edge(..)
   , centroid
   , connect
   , extent
@@ -8,9 +9,20 @@ module Poly.Properties
   , edges
   ) where
 
+import Control.Monad.ST (ST, runST)
+import qualified Data.HashTable.ST.Basic as H
+import qualified Data.Set as S
 import qualified Data.Vector as V
 
 import Poly
+
+data Collider = forall s. Collider
+  { activeEdges :: H.HashTable s Double (S.Set Int)
+  , passedEdges :: H.HashTable s Double (S.Set Int)
+  }
+
+collider :: Int -> Extent -> Collider
+collider resolution extent = 
 
 data Edge = Edge
   { start :: Point

@@ -24,6 +24,7 @@ library
                      , Poly
                      , Poly.Math
                      , Poly.Properties
+                     , Poly.Relations
                      , Poly.Shapes
                      , Patterns
                      , Transformers
@@ -36,6 +37,7 @@ library
                      , vector-algorithms
                      , random
                      , hashmap
+                     , hashtables
                      , lens
                      , containers
                      , mtl
@@ -51,6 +53,7 @@ library
                      , OverloadedLabels
                      , ExistentialQuantification
                      , DeriveFunctor
+                     , RankNTypes
 
 executable valora-exe
   hs-source-dirs:      app
