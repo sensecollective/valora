@@ -1,4 +1,4 @@
-module Patterns
+module Patterns.Tiles
   ( tile
   ) where
 

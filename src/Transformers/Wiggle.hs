@@ -1,28 +1,54 @@
 module Transformers.Wiggle
-  ( wiggle
-  , adaptiveWiggle
+  ( WiggleCfg(..)
+  , WiggleCoverage(..)
+  , wiggle
   ) where
 
+import Control.Monad.Random
+import qualified Data.Vector as V
+
 import Coords (Point(..))
-import Rand
-import Transformers
+import Coords.Math (distance)
+import Poly (Poly(..))
 
-adaptiveWiggle :: Double -> Transformer (Double, Point) Point
-adaptiveWiggle strength =
-  Transformer {consumedSamples = 2, runTransform = wiggleImpl strength}
+data WiggleCfg = WiggleCfg
+  { adaptToNeighbors :: Bool
+  , strength :: Double
+  , coverage :: WiggleCoverage
+  } deriving (Show, Eq)
 
-wiggle :: Double -> Transformer (Double, Point) Point
-wiggle strength =
-  Transformer
-  { consumedSamples = 2
-  , runTransform = (\feed (_, point) -> wiggleImpl strength feed (1, point))
-  }
+data WiggleCoverage
+  = All
+  | Odd
+  deriving (Show, Eq)
 
-wiggleImpl :: Double -> SampleFeed -> (Double, Point) -> Point
-wiggleImpl strength (SampleFeed (Sample s1:Sample s2:_)) ((localStrength, Point { x
-                                                                                , y
-                                                                                })) =
-  Point {x = x', y = y'}
+wiggle
+  :: RandomGen g
+  => WiggleCfg -> Poly -> Rand g Poly
+wiggle cfg Poly {vertices} = do
+  s1 <- getRandomR (-1, 1)
+  s2 <- getRandomR (-1, 1)
+  return Poly {vertices = wiggleVertices cfg (s1, s2) vertices}
+
+wiggleVertices :: WiggleCfg
+               -> (Double, Double)
+               -> V.Vector Point
+               -> V.Vector Point
+wiggleVertices WiggleCfg {adaptToNeighbors, strength, coverage} (s1, s2) vertices =
+  V.update vertices updates
   where
-    x' = x + strength * s1 * localStrength
-    y' = y + strength * s2 * localStrength
+    updates = V.mapMaybe (id) $ V.generate (V.length vertices) wiggler'
+    neighbor i = vertices V.! (i `mod` (V.length vertices))
+    wiggler' i =
+      case (coverage, i `mod` 2 == 0) of
+        (All, _) -> Just (i, wiggler i $ vertices V.! i)
+        (Odd, False) -> Just (i, wiggler i $ vertices V.! i)
+        _ -> Nothing
+    wiggler i Point {x, y} = Point {x = x', y = y'}
+      where
+        x' = x + strength * s1 * (adaptiveFactor i)
+        y' = y + strength * s2 * (adaptiveFactor i)
+    adaptiveFactor i =
+      if adaptToNeighbors
+        then distance (neighbor (i - 1)) $ neighbor i + 1
+        else 1
