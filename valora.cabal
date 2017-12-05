@@ -23,13 +23,14 @@ library
                      , Generators.Ramp
                      , Generators.Color
                      , Generators.WaterColor
+                     , Generators.Pack
                      , Raster
                      , Raster.Mask
                      , Raster.Poly.Scan
                      , Poly
-                     , Poly.Properties
                      , Poly.Shapes
                      , Poly.Translations
+                     , Poly.Clipping
                      , Patterns.Tiles
                      , Patterns.Sparkles
                      , Transformers.Warp

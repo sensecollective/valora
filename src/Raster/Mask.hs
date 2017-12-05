@@ -9,8 +9,7 @@ import qualified Data.Vector as V
 import Color (Blender, RGBA, emptyColor)
 import Constants (rasterSize)
 import Coords (Subrange(..), iToSubrangeValue)
-import Poly (Poly(..))
-import Poly.Properties (extent)
+import Poly (Poly(..), extent)
 import Raster (Raster(..))
 
 type Mask = Subrange RGBA

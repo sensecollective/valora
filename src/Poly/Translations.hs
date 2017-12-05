@@ -6,8 +6,7 @@ module Poly.Translations
 import qualified Data.Vector as V
 
 import Coords (Point(..))
-import Poly (Poly(..))
-import Poly.Properties (centroid)
+import Poly (Poly(..), centroid)
 
 scale :: Double -> Poly -> Poly
 scale factor Poly {vertices} = Poly {vertices = V.zipWith (+) vertices deltas}

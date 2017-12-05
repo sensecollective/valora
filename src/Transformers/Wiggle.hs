@@ -11,8 +11,7 @@ import qualified Data.Vector as V
 
 import Coords (Point(..))
 import Coords.Math (distance)
-import Poly (Poly(..))
-import Poly.Properties (centroid)
+import Poly (Poly(..), centroid)
 
 data WiggleCfg = WiggleCfg
   { adaptToNeighbors :: Bool
@@ -57,14 +56,8 @@ wiggleVertices WiggleCfg { adaptToNeighbors
         _ -> Nothing
     wiggler i Point {x, y} = Point {x = x', y = y'}
       where
-        x' =
-          x +
-          strength * (sign (x - xCenter) s1) * (adaptiveFactor i) *
-          (spatialAdaptiveFactor i)
-        y' =
-          y +
-          strength * (sign (y - yCenter) s2) * (adaptiveFactor i) *
-          (spatialAdaptiveFactor i)
+        x' = x + strength * (sign (x - xCenter) s1) * (adaptiveFactor i) * (spatialAdaptiveFactor i)
+        y' = y + strength * (sign (y - yCenter) s2) * (adaptiveFactor i) * (spatialAdaptiveFactor i)
         (s1, s2) = samplePair i
     spatialAdaptiveFactor i =
       case spatialAdapter of
@@ -76,8 +69,7 @@ wiggleVertices WiggleCfg { adaptToNeighbors
         else normalPairs V.! i
     normalPairs =
       V.fromList $
-      take (V.length vertices) $
-      zipWith (,) normalFeed $ drop (V.length vertices) normalFeed
+      take (V.length vertices) $ zipWith (,) normalFeed $ drop (V.length vertices) normalFeed
     normalFeed = mkNormals seed
     adaptiveFactor i =
       if adaptToNeighbors

@@ -8,7 +8,6 @@ import qualified Data.Vector as V
 import Coords (Point(..))
 import Coords.Math (midpoint)
 import Poly
-import Poly.Properties
 
 subdivideEdges
   :: RandomGen g

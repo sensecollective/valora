@@ -1,10 +1,11 @@
 module Raster.Poly.Scan
   ( scanRaster
+  , scangon
+  , inScan
   ) where
 
 import Data.List (maximumBy, minimumBy)
 import qualified Data.Map.Strict as M
-import qualified Data.Set as S
 import qualified Data.Vector as V
 
 import Data.Maybe
@@ -13,15 +14,10 @@ import Color (RGBA(..))
 import Color.Shaders
 import Constants (rasterSize, pixelSize)
 import Coords (Pixel(..), Point(..), Subrange(..), fromRasterCoord)
-import Poly
-import Poly.Properties (Edge(..), extent, extentCoords, edges)
+import Poly (Poly(..), Edge(..), extentCoords, extent, edges)
 import Raster (Raster(..), emptyRaster, rasterWith)
 import Raster.Mask (Mask(..))
 import VectorUtil (enumerate)
-
-indexSet :: (a -> Bool) -> V.Vector a -> S.Set Int
-indexSet predicate vec =
-  S.filter (\i -> predicate $ vec V.! i) $ S.fromList [0 .. (V.length vec - 1)]
 
 data Slope
   = Slope { m :: Double
@@ -36,14 +32,21 @@ data ScanEdge = ScanEdge
   } deriving (Show)
 
 inScanLine :: Double -> ScanEdge -> Bool
-inScanLine scanLine ScanEdge {high, low, ..} =
-  scanLine >= low && scanLine < high
+inScanLine scanLine ScanEdge {high, low, ..} = scanLine >= low && scanLine < high
 
 passedBy :: Point -> ScanEdge -> Bool
 passedBy Point {x, y} (ScanEdge {slope, ..}) =
   case slope of
     Slope {m, b} -> (y - b) / m < x
     Vertical staticX -> staticX < x
+
+inScan :: V.Vector ScanEdge -> Point -> Bool
+inScan scanEdges Point {x, y} = odd $ V.length $ V.filter (passedBy Point {x, y}) activeEdges
+  where
+    activeEdges = V.filter (inScanLine y) scanEdges
+
+scangon :: Poly -> V.Vector ScanEdge
+scangon poly = V.mapMaybe (fromEdge) $ edges poly
 
 -- Maybe construct a scan Edge. We don't want edges with a flat slope because
 -- they are useless.
@@ -75,15 +78,12 @@ scanRaster shader poly = mask {subrange = colors}
         alpha' = (alpha color) * opacity
         color = shader point
         opacity =
-          (fromIntegral $ V.length $ V.filter (id) samples) /
-          (fromIntegral $ V.length samples)
+          (fromIntegral $ V.length $ V.filter (id) samples) / (fromIntegral $ V.length samples)
           where
-            inScan i point =
-              odd $ V.length $ V.filter (passedBy point) activeEdges
-            activeEdges =
-              fromMaybe V.empty $ rowTables V.!? (i `mod` (height mask))
+            inScan i point = odd $ V.length $ V.filter (passedBy point) activeEdges
+            activeEdges = fromMaybe V.empty $ rowTables V.!? (i `mod` (height mask))
             samples = V.map (inScan i) $ superSample point
-    scanEdges = V.mapMaybe (fromEdge) $ edges poly
+    scanEdges = scangon poly
     mask = extentCoords $ extent poly
     rowTables = V.map (active) ys
     active y = V.filter (inScanLine y) scanEdges
@@ -91,8 +91,7 @@ scanRaster shader poly = mask {subrange = colors}
     Pixel {y = startY, x = _} = bottomLeft mask
 
 superSample :: Point -> V.Vector Point
-superSample point =
-  V.concatMap ((radialSuperSample point) . (pixelSize /)) $ V.fromList [1 .. 4]
+superSample point = V.concatMap ((radialSuperSample point) . (pixelSize /)) $ V.fromList [1 .. 4]
 
 radialSuperSample :: Point -> Double -> V.Vector Point
 radialSuperSample Point {x, y} offset =
