@@ -26,6 +26,7 @@ gfx_defines! {
 }
 
 pub struct Pipeline {
+    shader: gfx::handle::Program<gfx_device_gl::Resources>,
     depth: gfx::handle::DepthStencilView<
         gfx_device_gl::Resources,
         (gfx::format::D24_S8, gfx::format::Unorm),
@@ -48,23 +49,33 @@ impl Pipeline {
         let builder = glutin::WindowBuilder::new()
             .with_title("Valora".to_string())
             .with_dimensions(size, size)
-            .with_vsync();
+            .with_vsync()
+            .with_multisampling(16);
         let (window, device, mut factory, target, depth) =
             gfx_glutin::init::<ColorFormat, DepthFormat>(builder, &events_loop);
 
         let encoder = factory.create_command_buffer().into();
-        let pso = factory.create_pipeline_simple(
-            include_bytes!(concat!(
-                env!("CARGO_MANIFEST_DIR"),
-                "/shaders/default.glslv"
-            )),
-            include_bytes!(concat!(
-                env!("CARGO_MANIFEST_DIR"),
-                "/shaders/default.glslf"
-            )),
+
+        let shader = factory
+            .link_program(
+                include_bytes!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/shaders/default.glslv"
+                )),
+                include_bytes!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/shaders/default.glslf"
+                )),
+            )
+            .unwrap();
+        let pso = factory.create_pipeline_from_program(
+            &shader,
+            gfx::Primitive::TriangleList,
+            gfx::state::Rasterizer::new_fill(),
             pipe::new(),
         )?;
         Ok(Pipeline {
+            shader,
             depth,
             events_loop,
             window,
@@ -99,6 +110,7 @@ impl Pipeline {
         let mut terminate = false;
         let mut events = Vec::new();
         let Pipeline {
+            shader,
             mut depth,
             events_loop,
             window,
@@ -131,6 +143,7 @@ impl Pipeline {
             true => Ok(None),
             false => Ok(Some((
                 Pipeline {
+                    shader,
                     depth,
                     events_loop,
                     window,

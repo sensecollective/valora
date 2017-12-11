@@ -5,10 +5,14 @@ extern crate gfx;
 extern crate gfx_device_gl;
 extern crate gfx_window_glutin;
 extern crate glutin;
+extern crate itertools;
 extern crate lyon;
+pub extern crate palette;
 
 pub mod geom;
 pub mod sketch;
+pub mod shaders;
+pub mod element;
 mod raster;
 mod pipeline;
 mod errors;
@@ -21,14 +25,6 @@ mod tests {
     use geom::shapes::square;
 
     fn test_tessellations() -> Vec<Tessellation> {
-        /*let sq = geom::poly::Poly {
-            vertices: vec![
-                geom::Point { x: 0.0, y: 0.0 },
-                geom::Point { x: 0.5, y: 0.0 },
-                geom::Point { x: 0.5, y: 0.5 },
-                geom::Point { x: 0.0, y: 0.5 },
-            ],
-        };*/
         let sq = square(geom::Point { x: 0.0, y: 0.0 }, 0.5);
         vec![sq.tessellate().expect("square tesselation")]
     }

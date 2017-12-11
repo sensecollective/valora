@@ -1,41 +1,81 @@
-use errors::Result;
 use geom::Point;
+use shaders::Shader;
+use errors::Result;
 use pipeline::Vertex;
-use raster::{fix_coord, Tessellate, Tessellation};
+use raster::{Tessellate, Tessellation};
+use palette::Blend;
 
-const WHITE: [f32; 3] = [1.0, 1.0, 1.0];
+pub enum Poly {
+    Rect {
+        bottom_left: Point,
+        width: f32,
+        height: f32,
+    },
+    Irregular(Vec<Point>),
+}
 
-pub struct Poly {
-    pub vertices: Vec<Point>,
+impl Poly {
+    pub fn square(bottom_left: Point, size: f32) -> Poly {
+        Poly::Rect {
+            bottom_left,
+            width: size,
+            height: size,
+        }
+    }
+
+    fn vertices(&self) -> Vec<Point> {
+        match *self {
+            Poly::Rect {
+                bottom_left,
+                width,
+                height,
+            } => vec![
+                bottom_left,
+                Point {
+                    x: bottom_left.x,
+                    y: bottom_left.y + height,
+                },
+                Point {
+                    x: bottom_left.x + width,
+                    y: bottom_left.y + height,
+                },
+                Point {
+                    x: bottom_left.x + width,
+                    y: bottom_left.y,
+                },
+            ],
+            Poly::Irregular(ref vertices) => vertices.clone(),
+        }
+    }
 }
 
 impl Tessellate for Poly {
-    fn tessellate(self) -> Result<Tessellation> {
-        use lyon::path_iterator::*;
+    fn tessellate(self, shader: Shader) -> Result<Tessellation> {
         use lyon::tessellation::*;
         use lyon::tessellation::geometry_builder::{simple_builder, VertexBuffers};
 
         let mut vertex_buffers: VertexBuffers<FillVertex> = VertexBuffers::new();
-        {
-            let mut buffers_builder = simple_builder(&mut vertex_buffers);
-            let polyline = self.vertices
-                .iter()
-                .map(|v| math::TypedPoint2D::new(v.x, v.y));
-            basic_shapes::fill_polyline(
-                polyline,
-                &mut FillTessellator::new(),
-                &FillOptions::default(),
-                &mut buffers_builder,
-            )?;
-        }
+        basic_shapes::fill_polyline(
+            self.vertices().into_iter().map(Into::into),
+            &mut FillTessellator::new(),
+            &FillOptions::default(),
+            &mut simple_builder(&mut vertex_buffers),
+        )?;
+        println!("verts: {:?}", self.vertices());
+        println!("vert buffers: {:?}", vertex_buffers);
         Ok(Tessellation {
             vertices: vertex_buffers
                 .vertices
                 .into_iter()
-                .map(|v| {
+                .zip(
+                    self.vertices()
+                        .into_iter()
+                        .map(|v| shader.shade(v).into_premultiplied()),
+                )
+                .map(|(v, c)| {
                     Vertex {
-                        pos: [fix_coord(v.position.x), fix_coord(v.position.y)],
-                        color: WHITE,
+                        pos: [v.position.x, v.position.y],
+                        color: [c.red, c.green, c.blue],
                     }
                 })
                 .collect(),
