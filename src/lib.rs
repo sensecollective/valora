@@ -14,7 +14,7 @@ pub mod patterns;
 pub mod render;
 mod properties;
 mod element;
-mod texture;
 mod raster;
 mod pipeline;
+pub mod textures;
 pub mod errors;

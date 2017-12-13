@@ -23,28 +23,19 @@ pub trait Sketch: Sized {
 }
 
 pub fn sketch<S: Sketch>(cfg: SketchCfg, mut sketch: S) -> Result<()> {
-    let pipeline = Pipeline::new(cfg.size, cfg.root_frame_filename.clone())?;
+    let pipeline = Pipeline::new(cfg.size)?;
     let mut context = SketchContext { cfg, frame: 0 };
 
     let mut cycle = pipeline.events();
     while let Ok(Some((mut pipeline, events))) = cycle {
-        pipeline
-            .draw(sketch
-                      .draw(&context)?
-                      .build()
-                      .into_iter()
-                      .filter_map(|r| match r {
-                                      Renderable::Tessellations(t) => Some(t),
-                                      _ => None,
-                                  })
-                      .flat_map(|ts| ts)
-                      .collect::<Vec<Tessellation>>(),
-                  context.frame)?;
+        pipeline.draw(sketch.draw(&context)?.build())?;
         sketch = sketch.step(&context, events)?;
-        cycle = pipeline.events();
         context.frame += 1;
-
         thread::sleep(time::Duration::from_millis(500));
+        if let Some(ref root_frame_filename) = context.cfg.root_frame_filename {
+            pipeline.save_frame(&root_frame_filename, context.frame)?;
+        }
+        cycle = pipeline.events();
     }
     cycle.map(|_| ())
 }
