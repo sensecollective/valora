@@ -20,6 +20,12 @@ impl<T> Shaded<T> {
     pub fn shade(shader: Rc<Shader>, t: T) -> Self { Self { t, shader } }
 }
 
+impl<T: Tessellate> Draw for Shaded<T> {
+    default fn draw(&self, ctx: &SketchContext) -> Result<Canvas> {
+        Canvas::new().draw(self.shader.clone(), &self.t)
+    }
+}
+
 impl<T: 'static + Clone + Tessellate> Draw for Shaded<Tweener<T>> {
     fn draw(&self, ctx: &SketchContext) -> Result<Canvas> {
         Canvas::new().draw(self.shader.clone(), &self.t.tween(ctx.frame))

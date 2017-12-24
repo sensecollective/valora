@@ -5,6 +5,7 @@ use image;
 use raster::Tessellation;
 use shaders::Shader;
 use std::{self, rc::Rc};
+use sketch::SketchContext;
 
 #[derive(Copy, Clone)]
 pub struct GpuVertex {
@@ -20,14 +21,15 @@ pub struct Pipeline {
     display: glium::Display,
 }
 
-pub struct DrawCmd<'a, 'b> {
+pub struct DrawCmd<'a, 'b, 'c> {
     pub display: &'a glium::Display,
     frame: &'b mut glium::Frame,
     vertex_buffer: glium::VertexBuffer<GpuVertex>,
     index_buffer: glium::IndexBuffer<u32>,
+    pub ctx: &'c SketchContext
 }
 
-impl<'a, 'b> DrawCmd<'a, 'b> {
+impl<'a, 'b, 'c> DrawCmd<'a, 'b, 'c> {
     pub fn draw<U: Uniforms>(&mut self, shader: &glium::program::Program, u: &U) -> Result<()> {
         self.frame
             .draw(&self.vertex_buffer, &self.index_buffer, shader, u, &Default::default())
@@ -48,7 +50,7 @@ impl Pipeline {
         Ok(Pipeline { events_loop, display })
     }
 
-    pub fn draw(&mut self, elements: Vec<(Rc<Shader>, Tessellation)>) -> Result<()> {
+    pub fn draw(&mut self, elements: Vec<(Rc<Shader>, Tessellation)>, ctx: &SketchContext) -> Result<()> {
         let mut frame = self.display.draw();
         frame.clear_color(0.0, 0.0, 0.0, 1.0);
         for (shader, tessellation) in elements.into_iter() {
@@ -59,9 +61,11 @@ impl Pipeline {
                            frame: &mut frame,
                            vertex_buffer,
                            index_buffer,
+                           ctx
                        })?;
         }
-        frame.finish()?;
+
+        //frame.finish()?;
         Ok(())
     }
 

@@ -16,6 +16,7 @@ pub enum Shader {
     Constant(Colora),
     Linear(Rc<Fn(Point) -> Colora>),
     Texture(ImageBuffer<Rgb<u8>, Vec<u8>>),
+    Kaleidescope(ImageBuffer<Rgb<u8>, Vec<u8>>),
     Voronoi { sites: Vec<(Colora, Point)>, frame: u32 },
     Empty,
 }
@@ -30,6 +31,8 @@ impl Shader {
     pub fn empty() -> Self { Shader::Empty }
 
     pub fn texture(img: ImageBuffer<Rgb<u8>, Vec<u8>>) -> Self { Shader::Texture(img) }
+
+    pub fn kaleidescope(img: ImageBuffer<Rgb<u8>, Vec<u8>>) -> Self { Shader::Kaleidescope(img) }
 
     pub fn voronoi(sites: Vec<(Colora, Point)>, frame: u32) -> Self {
         Shader::Voronoi { sites, frame }
@@ -47,6 +50,7 @@ impl Shader {
         match *self { 
             Shader::Texture(_) => GLSLShader::texture().program(display),
             Shader::Voronoi { .. } => GLSLShader::voronoi().program(display),
+            Shader::Kaleidescope(_) => GLSLShader::kaleidescope().program(display),
             _ => GLSLShader::default().program(display),
         }
     }
@@ -63,12 +67,22 @@ impl Shader {
                 let raw = RawImage2d::from_raw_rgb(img.clone().into_raw(), dims);
                 let tex = Texture2d::new(cmd.display, raw)?;
                 let uniforms = uniform! {
-                    matrix: [
-                        [1.0, 0.0, 0.0, 0.0],
-                        [0.0, 1.0, 0.0, 0.0],
-                        [0.0, 0.0, 1.0, 0.0],
-                        [0.0 , 0.0, 0.0, 1.0f32],
-                    ],
+                    tex: tex.sampled()
+                        .magnify_filter(MagnifySamplerFilter::Linear)
+                        .minify_filter(MinifySamplerFilter::Linear),
+                    size: cmd.ctx.cfg.size as f32,
+                    frame: cmd.ctx.frame as u32,
+                };
+                cmd.draw(&self.program(cmd.display)?, &uniforms)
+            }
+            Shader::Kaleidescope(ref img) => {
+                use glium::uniforms::MagnifySamplerFilter;
+                use glium::uniforms::MinifySamplerFilter;
+
+                let dims = img.dimensions();
+                let raw = RawImage2d::from_raw_rgb(img.clone().into_raw(), dims);
+                let tex = Texture2d::new(cmd.display, raw)?;
+                let uniforms = uniform! {
                     tex: tex.sampled()
                         .magnify_filter(MagnifySamplerFilter::Linear)
                         .minify_filter(MinifySamplerFilter::Linear),

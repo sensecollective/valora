@@ -100,7 +100,7 @@ pub fn sketch<S: Draw + Step + Seed>(cfg: SketchCfg) -> Result<()> {
             sketch_bin = Some(S::seed(&context)?);
         }
         pipeline
-            .draw(sketch_bin.as_ref().unwrap().draw(&context)?.drain())?;
+            .draw(sketch_bin.as_ref().unwrap().draw(&context)?.drain(), &context)?;
         sketch_bin = sketch_bin.unwrap().step(&context, &mut rng, events)?;
         if let Some(ref root_frame_filename) = context.cfg.root_frame_filename {
             let saves_dir = format!("{}/{:14}/", root_frame_filename, context.current_seed);

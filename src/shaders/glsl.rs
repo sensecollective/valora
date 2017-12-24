@@ -27,6 +27,15 @@ impl GLSLShader {
         }
     }
 
+    pub fn kaleidescope() -> Self {
+        Self {
+            vertex_shader: include_str!(concat!(env!("CARGO_MANIFEST_DIR"),
+                                                "/shaders/kaleidescope.vert")),
+            fragment_shader: include_str!(concat!(env!("CARGO_MANIFEST_DIR"),
+                                                  "/shaders/kaleidescope.frag")),
+        }
+    }
+
     pub fn program(&self, display: &Display) -> Result<Program> {
         program!(display,
             150 => {
