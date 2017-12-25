@@ -1,19 +1,10 @@
-use errors::Result;
-use glium::{self, Surface};
+use errors::{Result, Error};
+use glium::{self, Surface, VertexBuffer, IndexBuffer};
 use glium::uniforms::Uniforms;
 use image;
-use raster::Tessellation;
 use shaders::Shader;
 use std::{self, rc::Rc};
-
-#[derive(Copy, Clone)]
-pub struct GpuVertex {
-    pub position: [f32; 2],
-    pub color: [f32; 3],
-}
-
-implement_vertex!(GpuVertex, position, color);
-implement_uniform_block!(GpuVertex, position, color);
+use tessellation::Tessellation;
 
 pub struct Pipeline {
     events_loop: glium::glutin::EventsLoop,
@@ -48,7 +39,7 @@ impl Pipeline {
         Ok(Pipeline { events_loop, display })
     }
 
-    pub fn draw(&mut self, elements: Vec<(Rc<Shader>, Tessellation)>) -> Result<()> {
+    pub fn draw(&mut self, elements: Vec<(Rc<Shader>, GpuMesh)>) -> Result<()> {
         let mut frame = self.display.draw();
         frame.clear_color(0.0, 0.0, 0.0, 1.0);
         for (shader, tessellation) in elements.into_iter() {

@@ -3,14 +3,14 @@ pub mod skins;
 pub mod shaded;
 
 pub use self::animation::*;
-pub use self::skins::*;
+//pub use self::skins::*;
 pub use self::shaded::*;
 
 use errors::Result;
 use glium;
 use pipeline::Pipeline;
 use rand::{SeedableRng, StdRng, random};
-use raster::{Tessellate, Tessellation};
+use tessellation::{Tessellate, Tessellation};
 use shaders::Shader;
 use std::{fs, thread, time, rc::Rc};
 use itertools::Itertools;

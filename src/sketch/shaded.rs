@@ -1,9 +1,9 @@
 use errors::Result;
 use palette::Colora;
-use raster::Tessellate;
+use tessellation::Tessellate;
 use shaders::Shader;
 use sketch::{Canvas, Draw, SketchContext};
-use std::{ops::Deref, rc::Rc};
+use std::{rc::Rc};
 use animation::Tweener;
 
 #[derive(Clone)]
